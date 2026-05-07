@@ -1,17 +1,17 @@
 from flask import Flask, request, jsonify, render_template_string, session
 import json
 import uuid
-import requests
 import os
+import requests
 
 app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
 
 DB_FILE = "keys.json"
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1501803448100720761/kGMlOO7g9QRmCEulJlbpw6jgpVdNn_NK0a05RpaadlrVDhBHBhxEsqV4OPkZuUBE4A7W"
-
+WEBHOOK_URL = "hhttps://discord.com/api/webhooks/1501803448100720761/kGMlOO7g9QRmCEulJlbpw6jgpVdNn_NK0a05RpaadlrVDhBHBhxEsqV4OPkZuUBE4A7W"
 ADMIN_PASSWORD = "3f2c1b7e-9c6a-4a12-8d3e-2f7a1c9b5d44"
+
 
 def load_db():
     try:
@@ -25,11 +25,6 @@ def save_db(db):
     with open(DB_FILE, "w") as f:
         json.dump(db, f, indent=4)
 
-
-def is_admin():
-    return session.get("admin") == True
-
-
 def send_webhook(message):
     try:
         requests.post(WEBHOOK_URL, json={"content": message})
@@ -40,22 +35,110 @@ PAGE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Panel</title>
+    <title>Rainix License Panel</title>
+    <style>
+        body {
+            margin:0;
+            font-family: Arial;
+            background: radial-gradient(circle at top, #0b1020, #05060a);
+            color:#e5e7eb;
+        }
+
+        .wrap {
+            max-width:800px;
+            margin:40px auto;
+            padding:20px;
+        }
+
+        .card {
+            background:#0f172a;
+            border:1px solid #1f2a44;
+            border-radius:16px;
+            padding:20px;
+            box-shadow:0 0 20px rgba(59,130,246,0.15);
+        }
+
+        h2 { text-align:center; margin-bottom:20px; }
+
+        button {
+            padding:10px 14px;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        .gen { background:#2563eb; color:white; }
+        .gen:hover { background:#1d4ed8; }
+
+        .danger { background:#ef4444; color:white; }
+        .danger:hover { background:#dc2626; }
+
+        .row {
+            display:flex;
+            gap:10px;
+            margin-bottom:15px;
+        }
+
+        input {
+            flex:1;
+            padding:10px;
+            border-radius:10px;
+            border:1px solid #334155;
+            background:#0b1220;
+            color:white;
+        }
+
+        .keylist {
+            margin-top:20px;
+        }
+
+        .key {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px;
+            margin:8px 0;
+            background:#111c33;
+            border-radius:10px;
+            border:1px solid #1f2a44;
+        }
+
+        .status {
+            font-size:12px;
+            opacity:0.8;
+        }
+
+        .btn-small {
+            padding:6px 10px;
+            font-size:12px;
+        }
+    </style>
 </head>
-<body style="font-family:Arial;background:#0b1020;color:white;padding:30px">
+<body>
+<div class="wrap">
 
-<h2>Admin Panel</h2>
+<div class="card">
+    <h2>Rainix Panel</h2>
 
-<div>
-    <input id="pass" placeholder="password">
-    <button onclick="login()">Login</button>
+    <div class="row">
+        <input id="pass" placeholder="password">
+        <button class="gen" onclick="login()">Login</button>
+    </div>
+
+    <div class="row">
+        <button class="gen" onclick="generate()">Generate UUID Key</button>
+    </div>
+
+    <div class="row">
+        <input id="key" placeholder="Enter key to revoke">
+        <button class="danger" onclick="revokeInput()">Revoke</button>
+    </div>
+
+    <div class="keylist" id="keys"></div>
 </div>
 
-<br>
-
-<button onclick="generate()">Generate Key</button>
-
-<div id="keys"></div>
+</div>
 
 <script>
 
@@ -74,61 +157,65 @@ async function login(){
 
     if(data.ok){
         loggedIn = true;
-        load();
+        loadKeys();
         alert("login success");
     } else {
         alert("wrong password");
     }
 }
 
-async function load(){
+async function loadKeys(){
     if(!loggedIn) return;
 
-    let res = await fetch("/list");
-    if(res.status != 200) return;
-
+    let res = await fetch('/list');
     let data = await res.json();
 
     let html = "";
 
     for(let k in data){
         html += `
-        <div>
-            <b>${k}</b>
-            <button onclick="del('${k}')">delete</button>
+        <div class='key'>
+            <div>
+                <div><b>${k}</b></div>
+                <div class='status'>valid: ${data[k].valid} | device: ${data[k].device}</div>
+            </div>
+            <button class='danger btn-small' onclick="revoke('${k}')">Delete</button>
         </div>
         `;
     }
 
-    document.getElementById("keys").innerHTML = html;
+    document.getElementById('keys').innerHTML = html;
 }
 
 async function generate(){
     if(!loggedIn) return alert("login first");
 
-    await fetch("/generate", {method:"POST"});
-    load();
+    await fetch('/generate');
+    loadKeys();
 }
 
-async function del(k){
-    await fetch("/revoke", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({key:k})
+async function revoke(key){
+    await fetch('/revoke', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({key:key})
     });
 
-    load();
+    loadKeys();
+}
+
+async function revokeInput(){
+    let key = document.getElementById('key').value;
+    await revoke(key);
 }
 
 </script>
-
 </body>
 </html>
 """
 
-
 @app.route("/")
-def index():
+def panel():
     return render_template_string(PAGE)
 
 
@@ -138,26 +225,27 @@ def login():
 
     if data.get("password") == ADMIN_PASSWORD:
         session["admin"] = True
+
+        # ★ログイン通知
+        send_webhook("@here ｒぐいんしたのだれ？ｗ")
+
         return jsonify({"ok": True})
 
     return jsonify({"ok": False})
 
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return jsonify({"ok": True})
+def is_admin():
+    return session.get("admin") == True
 
 
 @app.route("/list")
 def list_keys():
     if not is_admin():
         return jsonify({"error": "unauthorized"}), 403
-
     return jsonify(load_db())
 
 
-@app.route("/generate", methods=["POST"])
+@app.route("/generate")
 def generate():
     if not is_admin():
         return jsonify({"error": "unauthorized"}), 403
@@ -166,11 +254,9 @@ def generate():
     key = str(uuid.uuid4())
 
     db[key] = {"valid": True, "device": None}
-
     save_db(db)
 
-    # ★ 修正ここ
-    send_webhook(f"<@&1501803112586022992> キーをつくったよ!\n`{key}`")
+    send_webhook(f"<@&1501803112586022992> キーを作ったよ\n`{key}`")
 
     return jsonify({"key": key})
 
@@ -189,7 +275,7 @@ def revoke():
         del db[key]
         save_db(db)
 
-        send_webhook(f"<@&1501803112586022992> キーを削除したよ!\n`{key}`")
+        send_webhook(f"<@&1501803112586022992> キーを消したよ\n`{key}`")
 
     return jsonify({"ok": True})
 
