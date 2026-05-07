@@ -9,7 +9,7 @@ app.secret_key = "change_this_secret_key"
 
 DB_FILE = "keys.json"
 
-WEBHOOK_URL = "hhttps://discord.com/api/webhooks/1501803448100720761/kGMlOO7g9QRmCEulJlbpw6jgpVdNn_NK0a05RpaadlrVDhBHBhxEsqV4OPkZuUBE4A7W"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1501803448100720761/kGMlOO7g9QRmCEulJlbpw6jgpVdNn_NK0a05RpaadlrVDhBHBhxEsqV4OPkZuUBE4A7W"
 ADMIN_PASSWORD = "3f2c1b7e-9c6a-4a12-8d3e-2f7a1c9b5d44"
 
 
