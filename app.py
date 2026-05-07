@@ -2,17 +2,16 @@ from flask import Flask, request, jsonify, render_template_string, session
 import json
 import uuid
 import requests
+import os
 
 app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
 
 DB_FILE = "keys.json"
 
-
 WEBHOOK_URL = "https://discord.com/api/webhooks/1501803448100720761/kGMlOO7g9QRmCEulJlbpw6jgpVdNn_NK0a05RpaadlrVDhBHBhxEsqV4OPkZuUBE4A7W"
 
 ADMIN_PASSWORD = "3f2c1b7e-9c6a-4a12-8d3e-2f7a1c9b5d44"
-
 
 def load_db():
     try:
@@ -33,13 +32,9 @@ def is_admin():
 
 def send_webhook(message):
     try:
-        requests.post(WEBHOOK_URL, json={
-            "content": message
-        })
+        requests.post(WEBHOOK_URL, json={"content": message})
     except:
         pass
-
-
 
 PAGE = """
 <!DOCTYPE html>
@@ -131,6 +126,7 @@ async function del(k){
 </html>
 """
 
+
 @app.route("/")
 def index():
     return render_template_string(PAGE)
@@ -169,14 +165,12 @@ def generate():
     db = load_db()
     key = str(uuid.uuid4())
 
-    db[key] = {
-        "valid": True,
-        "device": None
-    }
+    db[key] = {"valid": True, "device": None}
 
     save_db(db)
 
-    send_webhook(f""<@&1501803112586022992> キーをつくったよ！\n`{key}`")
+    # ★ 修正ここ
+    send_webhook(f"<@&1501803112586022992> キーをつくったよ!\n`{key}`")
 
     return jsonify({"key": key})
 
@@ -195,8 +189,7 @@ def revoke():
         del db[key]
         save_db(db)
 
-
-        send_webhook(f"<@&1501803112586022992> キーを削除したよ！\n`{key}`")
+        send_webhook(f"<@&1501803112586022992> キーを削除したよ!\n`{key}`")
 
     return jsonify({"ok": True})
 
@@ -224,4 +217,4 @@ def check():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)00)
+    app.run(host="0.0.0.0", port=port)
